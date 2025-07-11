@@ -1,4 +1,4 @@
-name: Build ROM
+name: ZenorOS Build Only
 
 on:
   workflow_dispatch:
@@ -6,29 +6,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Set up environment
+    - name: Set up build environment
       run: |
-        sudo apt update
-        sudo apt install bc bison build-essential curl flex git gnupg gperf libncurses5-dev libssl-dev repo unzip zip zlib1g-dev openjdk-11-jdk python2
+        sudo apt-get update
+        sudo apt-get install -y bc bison build-essential curl flex git gnupg gperf \
+        libncurses5-dev libssl-dev repo unzip zip zlib1g-dev openjdk-11-jdk python2
 
-    - name: Initialize Repo
+    - name: Build ROM
       run: |
-        mkdir rom && cd rom
-        git config --global user.name "zenorrom"
-        git config --global user.email "zenoros0@gmail.com"
-        repo init -u https://github.com/PixelExperience/manifest -b thirteen --depth=1
-        repo sync -c --no-tags --no-clone-bundle -j2 || true
-
-    - name: Build
-      run: |
-        cd rom
+        cd rom  # تأكد إن ملفات السورس داخل مجلد rom
         source build/envsetup.sh
-        lunch aosp_arm64_ab-userdebug  # ❗ غيّر ده حسب جهازك
+        lunch aosp_arm64_ab-userdebug  # ❗ غيّر حسب جهازك
         make bacon -j2 || make otapackage -j2
-
-    - name: Upload ROM
-      uses: actions/
