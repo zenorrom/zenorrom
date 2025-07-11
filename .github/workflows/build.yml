@@ -1,4 +1,4 @@
-name: Zenor GSI Builder
+name: Build ROM
 
 on:
   workflow_dispatch:
@@ -6,33 +6,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
-
     steps:
-    - name: Prepare environment
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Set up environment
       run: |
-        sudo apt-get update
-        sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib \
-          libc6-dev-i386 libncurses5 libncurses5-dev x11proto-core-dev libx11-dev libreadline-dev libgl1-mesa-glx libgl1-mesa-dev \
-          gperf libxml2-utils xsltproc unzip python-is-python3 openjdk-11-jdk schedtool repo bc
+        sudo apt update
+        sudo apt install bc bison build-essential curl flex git gnupg gperf libncurses5-dev libssl-dev repo unzip zip zlib1g-dev openjdk-11-jdk python2
+
+    - name: Initialize Repo
+      run: |
+        mkdir rom && cd rom
         git config --global user.name "zenorrom"
         git config --global user.email "zenoros0@gmail.com"
+        repo init -u https://github.com/PixelExperience/manifest -b thirteen --depth=1
+        repo sync -c --no-tags --no-clone-bundle -j2 || true
 
-    - name: Sync AOSP source (Android 13)
+    - name: Build
       run: |
-        mkdir zenor-gsi && cd zenor-gsi
-        repo init -u https://android.googlesource.com/platform/manifest -b android-13.0.0_r30 --depth=1
-        repo sync -c --no-tags --no-clone-bundle -j$(nproc --all)
-
-    - name: Build GSI (32-bit ARM)
-      run: |
-        cd zenor-gsi
+        cd rom
         source build/envsetup.sh
-        lunch aosp_arm_ab-userdebug
-        make -j$(nproc --all) systemimage
+        lunch aosp_arm64_ab-userdebug  # ❗ غيّر ده حسب جهازك
+        make bacon -j2 || make otapackage -j2
 
-    - name: Upload GSI image
-      uses: actions/upload-artifact@v4
-      with:
-        name: Zenor-GSI
-        path: zenor-gsi/out/target/product/*/system.img
+    - name: Upload ROM
+      uses: actions/
