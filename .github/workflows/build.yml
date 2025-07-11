@@ -1,0 +1,38 @@
+name: Zenor GSI Builder
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Prepare environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib \
+          libc6-dev-i386 libncurses5 libncurses5-dev x11proto-core-dev libx11-dev libreadline-dev libgl1-mesa-glx libgl1-mesa-dev \
+          gperf libxml2-utils xsltproc unzip python-is-python3 openjdk-11-jdk schedtool repo bc
+        git config --global user.name "zenorrom"
+        git config --global user.email "zenoros0@gmail.com"
+
+    - name: Sync AOSP source (Android 13)
+      run: |
+        mkdir zenor-gsi && cd zenor-gsi
+        repo init -u https://android.googlesource.com/platform/manifest -b android-13.0.0_r30 --depth=1
+        repo sync -c --no-tags --no-clone-bundle -j$(nproc --all)
+
+    - name: Build GSI
+      run: |
+        cd zenor-gsi
+        source build/envsetup.sh
+        lunch aosp_arm64_ab-userdebug
+        make -j$(nproc --all) systemimage
+
+    - name: Upload GSI
+      uses: actions/upload-artifact@v3
+      with:
+        name: Zenor-GSI
+        path: zenor-gsi/out/target/product/*/system.img
