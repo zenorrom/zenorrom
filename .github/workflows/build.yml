@@ -24,15 +24,15 @@ jobs:
         repo init -u https://android.googlesource.com/platform/manifest -b android-13.0.0_r30 --depth=1
         repo sync -c --no-tags --no-clone-bundle -j$(nproc --all)
 
-    - name: Build GSI
+    - name: Build GSI (32-bit ARM)
       run: |
         cd zenor-gsi
         source build/envsetup.sh
-        lunch aosp_arm64_ab-userdebug
+        lunch aosp_arm_ab-userdebug
         make -j$(nproc --all) systemimage
 
-    - name: Upload GSI
-      uses: actions/upload-artifact@v3
+    - name: Upload GSI image
+      uses: actions/upload-artifact@v4
       with:
         name: Zenor-GSI
         path: zenor-gsi/out/target/product/*/system.img
