@@ -18,11 +18,24 @@ jobs:
           lzop pngcrush rsync schedtool squashfs-tools xsltproc zip \
           zlib1g-dev repo git wget ccache
 
-    - name: Initialize AOSP repo
+    - name: Add swap space
       run: |
-        mkdir aosp && cd aosp
+        sudo fallocate -l 4G /swapfile
+        sudo chmod 600 /swapfile
+        sudo mkswap /swapfile
+        sudo swapon /swapfile
+        free -h
+
+    - name: Initialize and sync AOSP repo
+      run: |
+        mkdir aosp
+        cd aosp
         repo init -u https://android.googlesource.com/platform/manifest -b android-13.0.0_r30
-        repo sync -c -j$(nproc) --force-sync
+        retry=0
+        until repo sync -c -j4 --force-sync || [ $retry -eq 3 ]; do
+          echo "Sync failed, retrying ($((++retry)))..."
+          sleep 30
+        done
 
     - name: Clone GSI build tools
       run: |
