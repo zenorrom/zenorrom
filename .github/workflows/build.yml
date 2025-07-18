@@ -28,10 +28,14 @@ jobs:
       run: |
         cd aosp
         git clone https://github.com/phhusson/treble_experimentations -b android-13.0
-        bash treble_experimentations/build-dakkar.sh
+
+    - name: Build GSI (64-bit AB)
+      run: |
+        cd aosp
+        bash treble_experimentations/build-dakkar.sh 64 ab
 
     - name: Upload GSI
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: GSI
         path: aosp/out/target/product/*/*.img
